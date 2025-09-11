@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="#2a2a2a">
+
+    <!-- First Row: Q-P -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginBottom="8dp">
+
+        <Button android:id="@+id/key_q" style="@style/KeyboardKey" android:text="Q" />
+        <Button android:id="@+id/key_w" style="@style/KeyboardKey" android:text="W" />
+        <Button android:id="@+id/key_e" style="@style/KeyboardKey" android:text="E" />
+        <Button android:id="@+id/key_r" style="@style/KeyboardKey" android:text="R" />
+        <Button android:id="@+id/key_t" style="@style/KeyboardKey" android:text="T" />
+        <Button android:id="@+id/key_y" style="@style/KeyboardKey" android:text="Y" />
+        <Button android:id="@+id/key_u" style="@style/KeyboardKey" android:text="U" />
+        <Button android:id="@+id/key_i" style="@style/KeyboardKey" android:text="I" />
+        <Button android:id="@+id/key_o" style="@style/KeyboardKey" android:text="O" />
+        <Button android:id="@+id/key_p" style="@style/KeyboardKey" android:text="P" />
+
+    </LinearLayout>
+
+    <!-- Second Row: A-L -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginBottom="8dp">
+
+        <Button android:id="@+id/key_a" style="@style/KeyboardKey" android:text="A" />
+        <Button android:id="@+id/key_s" style="@style/KeyboardKey" android:text="S" />
+        <Button android:id="@+id/key_d" style="@style/KeyboardKey" android:text="D" />
+        <Button android:id="@+id/key_f" style="@style/KeyboardKey" android:text="F" />
+        <Button android:id="@+id/key_g" style="@style/KeyboardKey" android:text="G" />
+        <Button android:id="@+id/key_h" style="@style/KeyboardKey" android:text="H" />
+        <Button android:id="@+id/key_j" style="@style/KeyboardKey" android:text="J" />
+        <Button android:id="@+id/key_k" style="@style/KeyboardKey" android:text="K" />
+        <Button android:id="@+id/key_l" style="@style/KeyboardKey" android:text="L" />
+
+    </LinearLayout>
+
+    <!-- Third Row: Z-M -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginBottom="8dp">
+
+        <Button android:id="@+id/key_z" style="@style/KeyboardKey" android:text="Z" />
+        <Button android:id="@+id/key_x" style="@style/KeyboardKey" android:text="X" />
+        <Button android:id="@+id/key_c" style="@style/KeyboardKey" android:text="C" />
+        <Button android:id="@+id/key_v" style="@style/KeyboardKey" android:text="V" />
+        <Button android:id="@+id/key_b" style="@style/KeyboardKey" android:text="B" />
+        <Button android:id="@+id/key_n" style="@style/KeyboardKey" android:text="N" />
+        <Button android:id="@+id/key_m" style="@style/KeyboardKey" android:text="M" />
+
+    </LinearLayout>
+
+    <!-- Fourth Row: Special Keys -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center">
+
+        <Button
+            android:id="@+id/key_space"
+            style="@style/KeyboardKeyWide"
+            android:text="SPACE" />
+        <Button
+            android:id="@+id/key_backspace"
+            style="@style/KeyboardKey"
+            android:text="⌫" />
+        <Button
+            android:id="@+id/key_search"
+            style="@style/KeyboardKeyWide"
+            android:text="SEARCH" />
+        <Button
+            android:id="@+id/key_dismiss"
+            style="@style/KeyboardKey"
+            android:text="✕" />
+
+    </LinearLayout>
+
+</LinearLayout>

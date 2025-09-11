@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Pressed state - darker green -->
+    <item android:state_pressed="true">
+        <shape android:shape="oval">
+            <solid android:color="#388E3C" />
+            <stroke android:width="3dp" android:color="#FFFFFF" />
+        </shape>
+    </item>
+
+    <!-- Focused state - bright yellow outline -->
+    <item android:state_focused="true">
+        <shape android:shape="oval">
+            <solid android:color="#4CAF50" />
+            <stroke android:width="4dp" android:color="#FFEB3B" />
+        </shape>
+    </item>
+
+    <!-- Default state - your original design -->
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#4CAF50" />
+            <stroke android:width="2dp" android:color="#FFFFFF" />
+        </shape>
+    </item>
+
+</selector>
