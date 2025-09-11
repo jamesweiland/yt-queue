@@ -1,5 +1,11 @@
 plugins {
     alias(libs.plugins.android.application)
+    id("earth.levi.dotenv-android") version "1.3.0"
+}
+
+dotenv {
+    packageName = "com.example.yt_queue"
+    sourcePath = "src/main/java/"
 }
 
 android {
@@ -29,6 +35,8 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
 }
+
+
 
 dependencies {
 

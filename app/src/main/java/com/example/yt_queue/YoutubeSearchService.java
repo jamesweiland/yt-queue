@@ -11,7 +11,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 public class YoutubeSearchService {
-    private static final String API_KEY = "AIzaSyAritWM4PJgzImENUJs6HGx2FRERW028u8";
+    private static final String API_KEY = Env.youtubeApiKey;
     private static final String BASE_URL = "https://www.googleapis.com/youtube/v3";
     private static final int MAX_RESULTS = 25;
     private OkHttpClient client = new OkHttpClient();
