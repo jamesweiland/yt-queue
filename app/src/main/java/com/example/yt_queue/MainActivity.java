@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.text.TextUtils;
 import android.view.View;
+import android.view.ViewParent;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -41,6 +42,7 @@ public class MainActivity extends FragmentActivity implements
     // search variables
     private static final int SEARCH_DELAY_MS = 300;
     private RecyclerView searchResultsRecyclerView;
+    private KeyboardContainer keyboardContainer;
     private EditText searchBar;
     private SearchResultAdapter searchResultAdapter;
     private SearchRunnable mDelayedLoad;
@@ -80,7 +82,7 @@ public class MainActivity extends FragmentActivity implements
         setupViews();
         // setup search
         setupSearchResultRecyclerView();
-        setupSearchBarClick();
+        setupSearchBarListeners();
         setupSearchRunnable();
 
         // setup queue
@@ -91,16 +93,30 @@ public class MainActivity extends FragmentActivity implements
     private void setupViews() {
         // search
         searchBar = findViewById(R.id.search_bar);
+        keyboardContainer = findViewById(R.id.keyboard_container);
         searchResultsRecyclerView = findViewById(R.id.search_results);
+        // recyclerview hardcodes focusable == true in the constructor, so explicitly set it here
+        searchResultsRecyclerView.setFocusable(false);
+        searchResultsRecyclerView.setFocusableInTouchMode(false);
+        searchResultsRecyclerView.setClickable(false);
+        System.out.println(searchResultsRecyclerView.isFocusable());
         searchBar.setShowSoftInputOnFocus(false);
+
+
 
         // queue
         queueRecyclerView = findViewById(R.id.queue);
+        // same thing as search result recycler view
+        queueRecyclerView.setFocusable(false);
+        queueRecyclerView.setFocusableInTouchMode(false);
+        queueRecyclerView.setClickable(false);
+
 
         // playback
         webView = findViewById(R.id.video_playback);
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true); // enable js
+        webView.addJavascriptInterface(new PlayerInterface(this), "Android"); // give interface to player
         settings.setDomStorageEnabled(true);
         // let the webview access the html file
         settings.setAllowFileAccess(true);
@@ -116,7 +132,7 @@ public class MainActivity extends FragmentActivity implements
         queueAdapter = new QueueAdapter(this);
         queueAdapter.setQueueListener(this);
 
-        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        TVFocusLayoutManager layoutManager = new TVFocusLayoutManager(this);
         queueRecyclerView.setLayoutManager(layoutManager);
         queueRecyclerView.setAdapter(queueAdapter);
     }
@@ -125,16 +141,22 @@ public class MainActivity extends FragmentActivity implements
         searchResultAdapter = new SearchResultAdapter(this);
         searchResultAdapter.setOnButtonClickListener(this);
 
-        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        System.out.println(searchResultsRecyclerView.isFocusable());
+        TVFocusLayoutManager layoutManager = new TVFocusLayoutManager(this);
         searchResultsRecyclerView.setLayoutManager(layoutManager);
         searchResultsRecyclerView.setAdapter(searchResultAdapter);
+        System.out.println(searchResultsRecyclerView.isFocusable());
+
     }
 
-    private void setupSearchBarClick() {
+    private void setupSearchBarListeners() {
         searchBar.setOnClickListener(v -> {
             if (keyboardHidden()) {
                 showKeyboard();
             }
+
+            // set focus to the keyboard
+            findViewById(R.id.key_q).requestFocus();
         });
     }
 
@@ -143,17 +165,30 @@ public class MainActivity extends FragmentActivity implements
     }
 
     public boolean keyboardHidden() {
-        return keyboard == null || keyboard.isHidden();
+        return keyboardContainer.getVisibility() == View.GONE;
+    }
+
+    private boolean isViewInKeyboard(View view) {
+        if (view == null) {
+            return false;
+        }
+        ViewParent parent = view.getParent();
+        while (parent != null) {
+            if (parent == keyboardContainer) {
+                return true;
+            }
+            parent = parent.getParent();
+        }
+        return false;
     }
 
     public void showKeyboard() {
+        keyboardContainer.setVisibility(View.VISIBLE);
+
         getSupportFragmentManager()
                 .beginTransaction()
                 .show(keyboard)
                 .commit();
-
-        View container = findViewById(R.id.keyboard_container);
-        container.setVisibility(View.VISIBLE);
     }
 
     public void hideKeyboard() {
@@ -161,8 +196,8 @@ public class MainActivity extends FragmentActivity implements
                 .beginTransaction()
                 .hide(keyboard)
                 .commit();
-        View container = findViewById(R.id.keyboard_container);
-        container.setVisibility(View.GONE);
+
+        keyboardContainer.setVisibility(View.GONE);
     }
 
     @Override

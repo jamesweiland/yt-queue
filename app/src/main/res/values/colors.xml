@@ -3,6 +3,13 @@
     <color name="background_gradient_end">#DDDDDD</color>
     <color name="fastlane_background">#0096a6</color>
     <color name="search_opaque">#ffaa3f</color>
-    <color name="selected_background">#ffaa3f</color>
-    <color name="default_background">#3d3d3d</color>
+    <color name="selected_background">#474444</color>
+    <color name="default_background">#000000</color>
+    <color name="search_result_background">#4C4747</color>
+    <color name="play_next_background">#A514BD</color>
+    <color name="add_to_queue_background">#D37626</color>
+    <color name="queue_btn_background_focused">#FFFFFF</color>
+    <color name="queue_btn_background_default">#312F2F</color>
+    <color name="queue_btn_src_focused">#000000</color>
+    <color name="queue_btn_src_default">#FFFFFF</color>
 </resources>

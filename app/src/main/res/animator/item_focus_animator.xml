@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- when item is focused, run scale up animation -->
+    <item android:state_focused="true">
+        <set>
+            <!-- Scale up x and y 1.1x -->
+            <objectAnimator
+                android:propertyName="scaleX"
+                android:duration="200"
+                android:valueTo="1.1"
+                android:valueType="floatType" />
+
+            <objectAnimator
+                android:propertyName="scaleY"
+                android:duration="200"
+                android:valueTo="1.1"
+                android:valueType="floatType" />
+        </set>
+    </item>
+
+    <!-- Default state : non focused -->
+    <item>
+        <set>
+            <!-- Scale down object back to 1.0x -->
+            <objectAnimator
+                android:propertyName="scaleX"
+                android:duration="200"
+                android:valueTo="1.0"
+                android:valueType="floatType" />
+
+            <objectAnimator
+                android:propertyName="scaleY"
+                android:duration="200"
+                android:valueTo="1.0"
+                android:valueType="floatType" />
+        </set>
+    </item>
+</selector>

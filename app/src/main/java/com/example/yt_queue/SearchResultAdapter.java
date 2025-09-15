@@ -3,6 +3,11 @@ package com.example.yt_queue;
 import android.content.Context;
 import android.provider.MediaStore;
 import android.text.Layout;
+import android.transition.ChangeBounds;
+import android.transition.Slide;
+import android.transition.TransitionManager;
+import android.transition.TransitionSet;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -117,6 +122,7 @@ public class SearchResultAdapter extends RecyclerView.Adapter<SearchResultAdapte
             btnPlayNext = itemView.findViewById(R.id.btn_play_next);
             btnAddToQueue = itemView.findViewById(R.id.btn_add_to_queue);
 
+            // handle focus changes
             video.setOnFocusChangeListener((v, hasFocus) -> {
                 System.out.println("Video focused");
                 if (hasFocus) {
@@ -126,10 +132,35 @@ public class SearchResultAdapter extends RecyclerView.Adapter<SearchResultAdapte
                 }
             });
 
+            btnPlayNext.setOnFocusChangeListener((v, hasFocus) -> {
+                if (!hasFocus && !video.hasFocus() && !btnAddToQueue.hasFocus()) {
+                    hideButtons();
+                }
+            });
+
+            btnAddToQueue.setOnFocusChangeListener((v, hasFocus) -> {
+                if (!hasFocus && !video.hasFocus() && !btnAddToQueue.hasFocus()) {
+                    hideButtons();
+                }
+            });
+
             System.out.println("ViewHolder created");
         }
 
         private void showButtons() {
+            // delay the transition so it looks nice
+
+            // the buttons will slide in from the right
+            TransitionSet transition = new TransitionSet();
+            transition.addTransition(new ChangeBounds());
+
+            Slide slide = new Slide(Gravity.END);
+            slide.addTarget(btnContainer.getId());
+            transition.addTransition(slide);
+            transition.setDuration(200);
+
+            TransitionManager.beginDelayedTransition(parent, transition);
+
             // constrain video item end to btn container start
             ConstraintSet set = new ConstraintSet();
             set.clone(parent);
@@ -143,6 +174,16 @@ public class SearchResultAdapter extends RecyclerView.Adapter<SearchResultAdapte
         }
 
         private void hideButtons() {
+            // delay the transition so it looks nice
+            TransitionSet transition = new TransitionSet();
+            transition.addTransition(new ChangeBounds());
+
+            Slide slide = new Slide(Gravity.END);
+            slide.addTarget(btnContainer.getId());
+            transition.addTransition(slide);
+            transition.setDuration(200);
+            TransitionManager.beginDelayedTransition(parent, transition);
+
             // constrain video item end to parent end
             ConstraintSet set = new ConstraintSet();
             set.clone(parent);

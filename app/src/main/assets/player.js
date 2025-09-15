@@ -23,10 +23,13 @@ function onYouTubeIframeAPIReady() {
         },
         events: {
             "onReady": onPlayerReady,
-            "onStateChange": onPlayerStateChange
+            "onStateChange": onPlayerStateChange,
+            "onError": onPlayerError
         }
     });
 };
+
+
 
 // this function is called when the video player is ready
 let isPlayerReady = false;
@@ -36,17 +39,39 @@ function onPlayerReady(event) {
 };
 
 // this function is called when the player's state changes
-let done = false;
 function onPlayerStateChange(event) {
-    // if (event.data === YT.PlayerState.PLAYING && !done) {
-    //     setTimeout(stopVideo, 6000);
-    //     done = true;
-    // }
+    // check for video ended
+    if (event.data === YT.PlayerState.ENDED) {
+        // let the android app know
+        Android.onVideoEnded();
+    }
 }
 
+// tracker to see how many times we've retried playing a video
+let tries = 0;
+// this function is called when there was an error retrieving the video
+function onPlayerError(event) {
+    const errorCode = event.data;
+
+    if (errorCode === 153) {
+        if (tries >= 3) {
+            Android.onVideoError(errorCode);
+        } else {
+            // transient configuration error; just retry after 500ms
+            setTimeout(() => playVideo(lastVideoId, 500));
+            tries++;
+        }
+    } else {
+        Android.onVideoError(errorCode);
+    }
+}
+
+// globally store lastVideoId so we can use it for retries
+let lastVideoId = null;
 // load a new video and play it
 function playVideo(videoId) {
     console.log("playVideo called with: ", videoId);
+    lastVideoId = videoId;
     if (isPlayerReady) {
         player.loadVideoById({
             videoId: videoId,

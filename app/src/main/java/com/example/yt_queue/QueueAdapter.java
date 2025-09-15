@@ -5,6 +5,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -102,7 +103,7 @@ public class QueueAdapter extends RecyclerView.Adapter<QueueAdapter.ViewHolder> 
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         private ConstraintLayout video;
-        private Button btnChangePos;
+        private ImageButton btnChangePos;
         private TextView videoTitle;
         private ImageView thumbnail;
         public ViewHolder(@NonNull View itemView) {
@@ -112,6 +113,22 @@ public class QueueAdapter extends RecyclerView.Adapter<QueueAdapter.ViewHolder> 
             videoTitle = itemView.findViewById(R.id.queue_title);
             thumbnail = itemView.findViewById(R.id.queue_thumbnail);
             btnChangePos = itemView.findViewById(R.id.btn_change_pos);
+
+            // set focus listener for the queue_video item
+            video.setOnFocusChangeListener((v, hasFocus) -> {
+                // make the button visible/gone depending on focus
+                if (hasFocus || btnChangePos.hasFocus() && btnChangePos.getVisibility() == View.GONE) {
+                    btnChangePos.setVisibility(View.VISIBLE);
+                } else if (!btnChangePos.hasFocus()) {
+                    btnChangePos.setVisibility(View.GONE);
+                }
+            });
+
+            btnChangePos.setOnFocusChangeListener((v, hasFocus) -> {
+                if (!video.hasFocus()) {
+                    btnChangePos.setVisibility(View.GONE);
+                }
+            });
         }
     }
 }
