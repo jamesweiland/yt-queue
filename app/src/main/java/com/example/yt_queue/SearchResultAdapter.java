@@ -148,52 +148,66 @@ public class SearchResultAdapter extends RecyclerView.Adapter<SearchResultAdapte
         }
 
         private void showButtons() {
-            // delay the transition so it looks nice
+            // post so it doesn't interfere with any recyclerview stuff
+            btnContainer.post(new Runnable() {
+                @Override
+                public void run() {
+                    // delay the transition so it looks nice
 
-            // the buttons will slide in from the right
-            TransitionSet transition = new TransitionSet();
-            transition.addTransition(new ChangeBounds());
+                    // the buttons will slide in from the right
+                    TransitionSet transition = new TransitionSet();
+                    transition.addTransition(new ChangeBounds());
 
-            Slide slide = new Slide(Gravity.END);
-            slide.addTarget(btnContainer.getId());
-            transition.addTransition(slide);
-            transition.setDuration(200);
+                    Slide slide = new Slide(Gravity.END);
+                    slide.addTarget(btnContainer.getId());
+                    transition.addTransition(slide);
+                    transition.setDuration(200);
 
-            TransitionManager.beginDelayedTransition(parent, transition);
+                    TransitionManager.beginDelayedTransition(parent, transition);
 
-            // constrain video item end to btn container start
-            ConstraintSet set = new ConstraintSet();
-            set.clone(parent);
-            set.connect(video.getId(), ConstraintSet.END, btnContainer.getId(), ConstraintSet.START);
+                    // constrain video item end to btn container start
+                    ConstraintSet set = new ConstraintSet();
+                    set.clone(parent);
+                    set.connect(video.getId(), ConstraintSet.END, btnContainer.getId(), ConstraintSet.START);
 
-            // apply constraint changes
-            set.applyTo(parent);
+                    // apply constraint changes
+                    set.applyTo(parent);
 
-            // show buttons
-            btnContainer.setVisibility(View.VISIBLE);
+                    // show buttons
+                    btnContainer.setVisibility(View.VISIBLE);
+                }
+            });
+
         }
 
         private void hideButtons() {
-            // delay the transition so it looks nice
-            TransitionSet transition = new TransitionSet();
-            transition.addTransition(new ChangeBounds());
+            // have to post so it doesn't interfere with any recyclerview animation
+            btnContainer.post(new Runnable() {
+                @Override
+                public void run() {
+                    // delay the transition so it looks nice
+                    TransitionSet transition = new TransitionSet();
+                    transition.addTransition(new ChangeBounds());
 
-            Slide slide = new Slide(Gravity.END);
-            slide.addTarget(btnContainer.getId());
-            transition.addTransition(slide);
-            transition.setDuration(200);
-            TransitionManager.beginDelayedTransition(parent, transition);
+                    Slide slide = new Slide(Gravity.END);
+                    slide.addTarget(btnContainer.getId());
+                    transition.addTransition(slide);
+                    transition.setDuration(200);
 
-            // constrain video item end to parent end
-            ConstraintSet set = new ConstraintSet();
-            set.clone(parent);
-            set.connect(video.getId(), ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END);
+                    TransitionManager.beginDelayedTransition(parent, transition);
 
-            // apply constraint changes
-            set.applyTo(parent);
+                    // constrain video item end to parent end
+                    ConstraintSet set = new ConstraintSet();
+                    set.clone(parent);
+                    set.connect(video.getId(), ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END);
 
-            // hide buttons
-            btnContainer.setVisibility(View.GONE);
+                    // apply constraint changes
+                    set.applyTo(parent);
+
+                    // hide buttons
+                    btnContainer.setVisibility(View.GONE);
+                }
+            });
         }
     }
 }
