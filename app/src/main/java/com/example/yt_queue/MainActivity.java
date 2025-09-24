@@ -2,18 +2,34 @@ package com.example.yt_queue;
 
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.SystemClock;
 import android.text.TextUtils;
+import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.ViewParent;
+import android.webkit.ConsoleMessage;
+import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.fragment.app.FragmentActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -37,7 +53,8 @@ import java.util.concurrent.Executors;
 public class MainActivity extends FragmentActivity implements
         KeyboardFragment.KeyboardListener,
         SearchResultAdapter.SearchResultButtonListener,
-        QueueAdapter.QueueListener {
+        QueueAdapter.QueueListener,
+        PlayerViewClient.YoutubePlayerHandler {
 
     // search variables
     private static final int SEARCH_DELAY_MS = 300;
@@ -60,6 +77,35 @@ public class MainActivity extends FragmentActivity implements
     // keyboard
     private KeyboardFragment keyboard;
 
+    // a custom chrome client to log messages from js and go full screen
+    public class MyChromeClient extends WebChromeClient {
+        View fullscreen = null;
+        @Override
+        public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
+            System.out.println("JAVASCRIPT: " + consoleMessage.message());
+            return true;
+        }
+
+        @Override
+        public void onHideCustomView() {
+            fullscreen.setVisibility(View.GONE);
+            webView.setVisibility(View.VISIBLE);
+        }
+
+        @Override
+        public void onShowCustomView(View view, CustomViewCallback callback) {
+            webView.setVisibility(View.GONE);
+            if (fullscreen != null) {
+                ((FrameLayout)getWindow().findViewById(R.id.video_container)).removeView(fullscreen);
+            }
+
+            fullscreen = view;
+            ((FrameLayout)getWindow().findViewById(R.id.video_container)).addView(fullscreen, new FrameLayout.LayoutParams(-1, -1));
+            fullscreen.setVisibility(View.VISIBLE);
+        }
+
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -76,6 +122,8 @@ public class MainActivity extends FragmentActivity implements
                 .replace(R.id.keyboard_container, keyboard)
                 .hide(keyboard)
                 .commit();
+
+        playVideoById("2yfyPeAEV3A");
     }
 
     private void setup() {
@@ -102,8 +150,6 @@ public class MainActivity extends FragmentActivity implements
         System.out.println(searchResultsRecyclerView.isFocusable());
         searchBar.setShowSoftInputOnFocus(false);
 
-
-
         // queue
         queueRecyclerView = findViewById(R.id.queue);
         // same thing as search result recycler view
@@ -113,6 +159,7 @@ public class MainActivity extends FragmentActivity implements
 
 
         // playback
+        WebView.setWebContentsDebuggingEnabled(true);
         webView = findViewById(R.id.video_playback);
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true); // enable js
@@ -124,8 +171,13 @@ public class MainActivity extends FragmentActivity implements
         settings.setAllowUniversalAccessFromFileURLs(true);
         // enable autoplay without user clicking on the video
         settings.setMediaPlaybackRequiresUserGesture(false);
-        // load the html file with youtube player script
-        webView.loadUrl("file:///android_asset/player_container.html");
+
+        PlayerViewClient viewClient = new PlayerViewClient(this);
+        viewClient.setYoutubePlayerHandler(this);
+        webView.setWebViewClient(viewClient);
+
+        // set custome chrome client to log messages from js to here
+        webView.setWebChromeClient(new MyChromeClient());
     }
 
     private void setupQueueAdapter() {
@@ -166,20 +218,6 @@ public class MainActivity extends FragmentActivity implements
 
     public boolean keyboardHidden() {
         return keyboardContainer.getVisibility() == View.GONE;
-    }
-
-    private boolean isViewInKeyboard(View view) {
-        if (view == null) {
-            return false;
-        }
-        ViewParent parent = view.getParent();
-        while (parent != null) {
-            if (parent == keyboardContainer) {
-                return true;
-            }
-            parent = parent.getParent();
-        }
-        return false;
     }
 
     public void showKeyboard() {
@@ -258,15 +296,28 @@ public class MainActivity extends FragmentActivity implements
     public void onNextVideo() {
         VideoItem nextVideo = queueAdapter.getNextVideo();
         if (nextVideo != null) {
-            embedVideo(nextVideo.getVideoId());
+            playVideoById(nextVideo.getVideoId());
 
             queueAdapter.remove(0);
         }
     }
 
-    public void embedVideo(String videoId) {
-        // tell javascript api to play this video
-        webView.evaluateJavascript("playVideo('" + videoId + "');", null);
+    // this function is called when we're ready to send a key event to the webview to enter full screen
+//    public void onVideoStarted() {
+//        // have to set fullscreen from here by dispatching a 'f' key event, which youtube
+//        // will now think is user generated
+//        System.out.println("onVideoStarted called");
+//        long downTime = SystemClock.uptimeMillis();
+//        KeyEvent fDown = new KeyEvent(downTime, downTime, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_F, 0);
+//        KeyEvent fUp = new KeyEvent(downTime, SystemClock.uptimeMillis(), KeyEvent.ACTION_UP, KeyEvent.KEYCODE_F, 0);
+//        webView.dispatchKeyEvent(fDown);
+//        webView.dispatchKeyEvent(fUp);
+//    }
+
+    public void playVideoById(String videoId) {
+        // load the url
+        String url = "https://www.youtube.com/watch?v=" + videoId;
+        webView.loadUrl(url); // javascript will be injected once the page is finished loading
     }
 
     @Override
@@ -295,9 +346,24 @@ public class MainActivity extends FragmentActivity implements
         webView.evaluateJavascript("isVideoPlaying();", (playing) -> {
             if (playing.equals("false")) {
                 String id = video.getVideoId();
-                embedVideo(id);
+                playVideoById(id);
                 queueAdapter.remove(0);
             }
         });
+    }
+
+    @Override
+    public ValueCallback<String> onVideoStarted() {
+        System.out.println("onVideoStarted called");
+
+        // simulate the user pressing the f key to trigger full screen mode
+
+        long downTime = SystemClock.uptimeMillis();
+        KeyEvent fDown = new KeyEvent(downTime, downTime, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_F, 0);
+        KeyEvent fUp = new KeyEvent(downTime, SystemClock.uptimeMillis(), KeyEvent.ACTION_UP, KeyEvent.KEYCODE_F, 0);
+        webView.dispatchKeyEvent(fDown);
+        webView.dispatchKeyEvent(fUp);
+
+        return null;
     }
 }

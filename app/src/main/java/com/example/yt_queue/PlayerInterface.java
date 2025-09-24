@@ -10,6 +10,13 @@ public class PlayerInterface {
     }
 
     @JavascriptInterface
+    public void onVideoStarted() {
+//        mainActivity.runOnUiThread(() -> {
+//            mainActivity.onVideoStarted();
+//        });
+    }
+
+    @JavascriptInterface
     public void onVideoEnded() {
         // js will call this method when a video ends
         // it will call from a background thread, so
