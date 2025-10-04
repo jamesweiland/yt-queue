@@ -19,6 +19,7 @@
         android:theme="@style/Theme.Ytqueue">
         <activity
             android:name=".MainActivity"
+            android:hardwareAccelerated="true"
             android:banner="@drawable/app_icon_your_company"
             android:exported="true"
             android:icon="@drawable/app_icon_your_company"

@@ -11,9 +11,9 @@ public class PlayerInterface {
 
     @JavascriptInterface
     public void onVideoStarted() {
-//        mainActivity.runOnUiThread(() -> {
-//            mainActivity.onVideoStarted();
-//        });
+        mainActivity.runOnUiThread(() -> {
+            mainActivity.onVideoStarted();
+        });
     }
 
     @JavascriptInterface

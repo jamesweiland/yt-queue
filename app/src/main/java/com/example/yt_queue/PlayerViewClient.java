@@ -1,6 +1,8 @@
 package com.example.yt_queue;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.webkit.ValueCallback;
 import android.webkit.WebResourceRequest;
@@ -18,8 +20,8 @@ import java.util.Set;
 public class PlayerViewClient extends WebViewClient {
     private Context context;
     private static final Set<String> AD_HOSTS = new HashSet<>();
-
     private YoutubePlayerHandler handler;
+    private String urlFinished = "";
 
     static {
         AD_HOSTS.add("googleads.g.doubleclick.net");
@@ -29,7 +31,7 @@ public class PlayerViewClient extends WebViewClient {
     }
 
     public interface YoutubePlayerHandler {
-        public ValueCallback<String> onVideoStarted();
+        public void onVideoStarted();
     }
 
     public void setYoutubePlayerHandler(YoutubePlayerHandler handler) {
@@ -40,11 +42,14 @@ public class PlayerViewClient extends WebViewClient {
         this.context = context;
     }
 
+
+
     @Override
     public void onPageFinished(WebView view, String url) {
         super.onPageFinished(view, url);
 
-        if (url != null && (url.startsWith("https://m.youtube.com/watch?v=") || url.startsWith("https://www.youtube.com/watch?v="))) {
+        if (url != null && (url.startsWith("https://m.youtube.com/watch?v=")) && !urlFinished.equals(url)) {
+
             System.out.println("Finished loading url " + url);
 
             // inject javascript
@@ -52,8 +57,15 @@ public class PlayerViewClient extends WebViewClient {
                     "console.log('in the script');" +
                     "document.addEventListener('keydown', (event) => {" +
                             "if (event.key === 'f') {" +
+                                "console.log('requesting fullscreen');" +
                                 "const player = document.querySelector('#movie_player');" +
-                                "player.requestFullscreen();" +
+                                "player.requestFullscreen().then(() => {" +
+                                    "console.log('fullscreen worked');" +
+                                "}).catch(error => {" +
+                                    "console.log('error occurred requesting fullscreen');" +
+                                    "console.log(error.name);" +
+                                    "console.log(error.message);" +
+                                "});" +
                             "}" +
                         "}" +
                     ");" +
@@ -64,9 +76,11 @@ public class PlayerViewClient extends WebViewClient {
                                 "if (player) {" +
                                     "console.log('player found');" +
                                     "observer.disconnect();" +
+                                    "player.addEventListener('play', () => Android.onVideoStarted());" +
                                     "if (player.paused) {" +
                                         "console.log('playing');" +
                                         "player.click();" +
+                                        "Android.onVideoStarted();" +
                                     "}" +
                                 "}" +
                         "});" +
@@ -78,7 +92,8 @@ public class PlayerViewClient extends WebViewClient {
                     "waitForPlayerReady();"
             );
 
-            view.evaluateJavascript(autoplayScript, handler.onVideoStarted());
+            view.evaluateJavascript(autoplayScript, null); // we have to add the callback in the js instead of here otherwise itll happen too early
+            urlFinished = url;
         }
     }
 
@@ -102,6 +117,7 @@ public class PlayerViewClient extends WebViewClient {
         System.out.println("Allowing navigation to " + url);
         return super.shouldInterceptRequest(view, request);
     }
+
 }
 
 

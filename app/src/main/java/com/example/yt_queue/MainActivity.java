@@ -21,6 +21,7 @@ import android.widget.EditText;
 import android.widget.FrameLayout;
 
 import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.fragment.app.FragmentActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -88,22 +89,46 @@ public class MainActivity extends FragmentActivity implements
 
         @Override
         public void onHideCustomView() {
+            System.out.println("Hiding custom view");
             fullscreen.setVisibility(View.GONE);
             webView.setVisibility(View.VISIBLE);
         }
 
         @Override
         public void onShowCustomView(View view, CustomViewCallback callback) {
+            System.out.println("Showing custom view");
+
+            // get parent of everything
+            ConstraintLayout parent = findViewById(R.id.right_container);
+            FrameLayout videoContainer = findViewById(R.id.video_container);
+
+            // update constraints of queue, video_container
+            ConstraintSet constraintSet = new ConstraintSet();
+            constraintSet.clone(parent);
+
+
+
+            // queue's top constraint should now go to video_container
+            constraintSet.connect(R.id.queue, ConstraintSet.TOP, R.id.video_container, ConstraintSet.BOTTOM, 0);
+            // chain constraints on fullscreen container
+            constraintSet.setVerticalChainStyle(R.id.video_container, ConstraintSet.CHAIN_SPREAD);
+            constraintSet.setVerticalWeight(R.id.video_container, 1.0f);
+
+            // apply constraint changes
+            constraintSet.applyTo(parent);
+
+            // show fullscreen container, hide webview
             webView.setVisibility(View.GONE);
+            videoContainer.setVisibility(View.VISIBLE);
+
             if (fullscreen != null) {
-                ((FrameLayout)getWindow().findViewById(R.id.video_container)).removeView(fullscreen);
+                onHideCustomView();
             }
 
             fullscreen = view;
-            ((FrameLayout)getWindow().findViewById(R.id.video_container)).addView(fullscreen, new FrameLayout.LayoutParams(-1, -1));
+            videoContainer.addView(fullscreen, new FrameLayout.LayoutParams(-1, -1));
             fullscreen.setVisibility(View.VISIBLE);
         }
-
     }
 
     @Override
@@ -123,7 +148,7 @@ public class MainActivity extends FragmentActivity implements
                 .hide(keyboard)
                 .commit();
 
-        playVideoById("2yfyPeAEV3A");
+//        playVideoById("2yfyPeAEV3A");
     }
 
     private void setup() {
@@ -171,6 +196,7 @@ public class MainActivity extends FragmentActivity implements
         settings.setAllowUniversalAccessFromFileURLs(true);
         // enable autoplay without user clicking on the video
         settings.setMediaPlaybackRequiresUserGesture(false);
+        settings.setAllowContentAccess(true);
 
         PlayerViewClient viewClient = new PlayerViewClient(this);
         viewClient.setYoutubePlayerHandler(this);
@@ -343,17 +369,27 @@ public class MainActivity extends FragmentActivity implements
 
     @Override
     public void onVideoAddedToEmptyQueue(VideoItem video) {
-        webView.evaluateJavascript("isVideoPlaying();", (playing) -> {
-            if (playing.equals("false")) {
-                String id = video.getVideoId();
-                playVideoById(id);
-                queueAdapter.remove(0);
-            }
-        });
+
+        webView.evaluateJavascript(
+                        (
+                                "function isVideoPlaying() {" +
+                                    "const video = document.querySelector('#movie_player > div.html5-video-container > video');" +
+                                    "if (video && !video.paused) return true;" +
+                                    "return false;" +
+                                "}" +
+                                "isVideoPlaying();"
+                        ),
+                (String playing) -> {
+                            if (!playing.equals("true")) {
+                                String id = video.getVideoId();
+                                playVideoById(id);
+                                queueAdapter.remove(0);
+                            }
+                });
     }
 
     @Override
-    public ValueCallback<String> onVideoStarted() {
+    public void onVideoStarted() {
         System.out.println("onVideoStarted called");
 
         // simulate the user pressing the f key to trigger full screen mode
@@ -363,7 +399,5 @@ public class MainActivity extends FragmentActivity implements
         KeyEvent fUp = new KeyEvent(downTime, SystemClock.uptimeMillis(), KeyEvent.ACTION_UP, KeyEvent.KEYCODE_F, 0);
         webView.dispatchKeyEvent(fDown);
         webView.dispatchKeyEvent(fUp);
-
-        return null;
     }
 }
