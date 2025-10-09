@@ -14,6 +14,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -28,6 +29,7 @@ public class PlayerViewClient extends WebViewClient {
         AD_HOSTS.add("adservice.google.com");
         AD_HOSTS.add("pagead2.googlesyndication.com");
         AD_HOSTS.add("securepubads.g.doubleclick.net");
+        AD_HOSTS.add("ade.googlesyndication.com");
     }
 
     public interface YoutubePlayerHandler {
@@ -53,45 +55,9 @@ public class PlayerViewClient extends WebViewClient {
             System.out.println("Finished loading url " + url);
 
             // inject javascript
-            String autoplayScript = (
-                    "console.log('in the script');" +
-                    "document.addEventListener('keydown', (event) => {" +
-                            "if (event.key === 'f') {" +
-                                "console.log('requesting fullscreen');" +
-                                "const player = document.querySelector('#movie_player');" +
-                                "player.requestFullscreen().then(() => {" +
-                                    "console.log('fullscreen worked');" +
-                                "}).catch(error => {" +
-                                    "console.log('error occurred requesting fullscreen');" +
-                                    "console.log(error.name);" +
-                                    "console.log(error.message);" +
-                                "});" +
-                            "}" +
-                        "}" +
-                    ");" +
-                    "function waitForPlayerReady() {" +
-                        "const observer = new MutationObserver((mutations, observer) => {" +
-                                "console.log('checking for player');" +
-                                "const player = document.querySelector('#movie_player > div.html5-video-container > video');" +
-                                "if (player) {" +
-                                    "console.log('player found');" +
-                                    "observer.disconnect();" +
-                                    "player.addEventListener('play', () => Android.onVideoStarted());" +
-                                    "if (player.paused) {" +
-                                        "console.log('playing');" +
-                                        "player.click();" +
-                                        "Android.onVideoStarted();" +
-                                    "}" +
-                                "}" +
-                        "});" +
-                        "observer.observe(document.body, {" +
-                                "childList: true," +
-                                "subtree: true," +
-                        "});" +
-                    "}" +
-                    "waitForPlayerReady();"
-            );
+            String autoplayScript = jsToString("driver.js");
 
+            System.out.println("Injecting js into " + url);
             view.evaluateJavascript(autoplayScript, null); // we have to add the callback in the js instead of here otherwise itll happen too early
             urlFinished = url;
         }
@@ -116,6 +82,21 @@ public class PlayerViewClient extends WebViewClient {
         // otherwise, proceed normally
         System.out.println("Allowing navigation to " + url);
         return super.shouldInterceptRequest(view, request);
+    }
+
+    // helper to read a .js asset and convert it into a string,
+    // so WebViewClient can evaluate it
+    private String jsToString(String path) {
+        try {
+            InputStream inputStream = context.getAssets().open(path);
+            byte[] buffer = new byte[inputStream.available()];
+            inputStream.read(buffer);
+            inputStream.close();
+            return new String(buffer, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return "";
+        }
     }
 
 }

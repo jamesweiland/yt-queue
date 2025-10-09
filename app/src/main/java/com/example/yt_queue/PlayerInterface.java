@@ -22,7 +22,7 @@ public class PlayerInterface {
         // it will call from a background thread, so
         // post to main thread
         mainActivity.runOnUiThread(() -> {
-            mainActivity.onNextVideo();
+            mainActivity.onVideoEnded();
         });
     }
 
@@ -31,7 +31,7 @@ public class PlayerInterface {
         // js will call this when it has an error that it doesn't know what to do about
         // for now, lets just play the next video
         mainActivity.runOnUiThread(() -> {
-            mainActivity.onNextVideo();
+            mainActivity.onVideoEnded();
         });
     }
 }

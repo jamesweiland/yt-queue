@@ -4,33 +4,20 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
-import android.view.ViewGroup;
-import android.view.ViewParent;
 import android.webkit.ConsoleMessage;
-import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
-import android.webkit.WebResourceRequest;
-import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
-import android.webkit.WebViewClient;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.fragment.app.FragmentActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -77,10 +64,12 @@ public class MainActivity extends FragmentActivity implements
 
     // keyboard
     private KeyboardFragment keyboard;
+    private boolean playing = false; // track whether a video is playing in the webview or not
 
     // a custom chrome client to log messages from js and go full screen
     public class MyChromeClient extends WebChromeClient {
         View fullscreen = null;
+        private CustomViewCallback customViewCallback;
         @Override
         public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
             System.out.println("JAVASCRIPT: " + consoleMessage.message());
@@ -90,13 +79,46 @@ public class MainActivity extends FragmentActivity implements
         @Override
         public void onHideCustomView() {
             System.out.println("Hiding custom view");
-            fullscreen.setVisibility(View.GONE);
+
+            if (fullscreen == null) {
+                return;
+            }
+
+            // get parent of everything
+            ConstraintLayout parent = findViewById(R.id.right_container);
+            FrameLayout videoContainer = findViewById(R.id.video_container);
+
+            // remove fullscreen view from container
+            videoContainer.removeView(fullscreen);
+            fullscreen = null;
+
+            // restore the original constraints
+            ConstraintSet constraintSet = new ConstraintSet();
+            constraintSet.clone(parent);
+
+            // queue's top constraint should now go to the webview
+            constraintSet.connect(R.id.queue, ConstraintSet.TOP, R.id.video_playback, ConstraintSet.BOTTOM, 0);
+            constraintSet.applyTo(parent);
+
+            videoContainer.setVisibility(View.GONE);
+            // show the regular webview again
             webView.setVisibility(View.VISIBLE);
+
+            // invoke callback
+            if (customViewCallback != null) {
+                customViewCallback.onCustomViewHidden();
+            }
+            customViewCallback = null;
         }
 
         @Override
         public void onShowCustomView(View view, CustomViewCallback callback) {
             System.out.println("Showing custom view");
+
+            if (fullscreen != null) {
+                onHideCustomView();
+            }
+            customViewCallback = callback;
 
             // get parent of everything
             ConstraintLayout parent = findViewById(R.id.right_container);
@@ -105,8 +127,6 @@ public class MainActivity extends FragmentActivity implements
             // update constraints of queue, video_container
             ConstraintSet constraintSet = new ConstraintSet();
             constraintSet.clone(parent);
-
-
 
             // queue's top constraint should now go to video_container
             constraintSet.connect(R.id.queue, ConstraintSet.TOP, R.id.video_container, ConstraintSet.BOTTOM, 0);
@@ -121,9 +141,7 @@ public class MainActivity extends FragmentActivity implements
             webView.setVisibility(View.GONE);
             videoContainer.setVisibility(View.VISIBLE);
 
-            if (fullscreen != null) {
-                onHideCustomView();
-            }
+
 
             fullscreen = view;
             videoContainer.addView(fullscreen, new FrameLayout.LayoutParams(-1, -1));
@@ -319,31 +337,24 @@ public class MainActivity extends FragmentActivity implements
         }
     }
 
-    public void onNextVideo() {
+    public void onVideoEnded() {
+        System.out.println("onVideoEnded called");
         VideoItem nextVideo = queueAdapter.getNextVideo();
         if (nextVideo != null) {
             playVideoById(nextVideo.getVideoId());
 
             queueAdapter.remove(0);
+        } else {
+            playing = false;
+            webView.loadUrl("about:blank"); // TODO get some placeholder view
         }
     }
-
-    // this function is called when we're ready to send a key event to the webview to enter full screen
-//    public void onVideoStarted() {
-//        // have to set fullscreen from here by dispatching a 'f' key event, which youtube
-//        // will now think is user generated
-//        System.out.println("onVideoStarted called");
-//        long downTime = SystemClock.uptimeMillis();
-//        KeyEvent fDown = new KeyEvent(downTime, downTime, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_F, 0);
-//        KeyEvent fUp = new KeyEvent(downTime, SystemClock.uptimeMillis(), KeyEvent.ACTION_UP, KeyEvent.KEYCODE_F, 0);
-//        webView.dispatchKeyEvent(fDown);
-//        webView.dispatchKeyEvent(fUp);
-//    }
 
     public void playVideoById(String videoId) {
         // load the url
         String url = "https://www.youtube.com/watch?v=" + videoId;
         webView.loadUrl(url); // javascript will be injected once the page is finished loading
+        playing = true;
     }
 
     @Override
@@ -370,22 +381,11 @@ public class MainActivity extends FragmentActivity implements
     @Override
     public void onVideoAddedToEmptyQueue(VideoItem video) {
 
-        webView.evaluateJavascript(
-                        (
-                                "function isVideoPlaying() {" +
-                                    "const video = document.querySelector('#movie_player > div.html5-video-container > video');" +
-                                    "if (video && !video.paused) return true;" +
-                                    "return false;" +
-                                "}" +
-                                "isVideoPlaying();"
-                        ),
-                (String playing) -> {
-                            if (!playing.equals("true")) {
-                                String id = video.getVideoId();
-                                playVideoById(id);
-                                queueAdapter.remove(0);
-                            }
-                });
+        if (!playing) {
+            String id = video.getVideoId();
+            playVideoById(id);
+            queueAdapter.remove(0);
+        }
     }
 
     @Override
